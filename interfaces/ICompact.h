@@ -76,6 +76,8 @@ public:
 
 protected:
 
+    ICompact() = default;
+
     /**/
     class ISimplyConnectedCompact
     {
