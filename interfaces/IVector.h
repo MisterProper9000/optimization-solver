@@ -22,7 +22,7 @@ public:
 
     /*non default copyable*/
     IVector(const IVector& other) = delete;
-    void operator=( const IVector& ) = delete;
+    void operator=( const IVector& other) = delete;
 
     /*factories*/
     static IVector* createVector(unsigned int size);
@@ -49,6 +49,7 @@ public:
     virtual IVector* clone() const = 0;
 
     /*dtor*/
+    virtual ~IVector() = default;
 
 protected:
     IVector() = default;
