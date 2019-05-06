@@ -33,10 +33,10 @@ public:
     virtual int MakeConvex() = 0;
 
     /*utils*/
-    virtual QPair<QSharedPointer<IVector>, QSharedPointer<IVector> > getBoundaries() = 0;
-    virtual QPair<double, double> getBoundaries(unsigned int dim) = 0;
-    virtual IVector* getMaxStep() = 0;
-    virtual IVector* getDomainStep(unsigned int domainIdx) = 0;
+    //virtual QPair<QSharedPointer<IVector>, QSharedPointer<IVector> > getBoundaries() const = 0;
+    //virtual QPair<double, double> getBoundaries(unsigned int dim) = 0;
+    virtual IVector* getMaxStep() const = 0;
+    virtual IVector* getDomainStep(unsigned int domainIdx) const = 0;
 
     virtual iterator* end(unsigned int idx) = 0;
     virtual iterator* begin(unsigned int idx) = 0;
@@ -47,7 +47,7 @@ public:
     virtual int isIntersects(ICompact const* const other, bool& result) = 0;
 
     virtual int domainCount(unsigned int& result) = 0;
-    virtual ICompact* getDomain(unsigned int domainIdx) = 0;
+    //virtual ICompact* getDomain(unsigned int domainIdx) = 0;
 
     virtual ICompact* clone() const = 0;
     virtual ICompact* cloneDomain(unsigned int domainIdx) const = 0;
@@ -67,35 +67,36 @@ public:
 
         virtual int setDirection(IVector const* const dir) = 0;
 
-        /*dtor*/
-        virtual ~iterator() = default;
+
     protected:
         iterator() = default;
-        virtual int isDirectionValid() = 0;
+        //virtual int isDirectionValid() = 0;
+        /*dtor*/
+        virtual ~iterator() = default;
     };
 
 protected:
-
+/*
     ICompact() = default;
 
-    /**/
+
     class ISimplyConnectedCompact
     {
     public:
-        /*non default copyable*/
+        //non default copyable
         ISimplyConnectedCompact(const ISimplyConnectedCompact& other) = delete;
         void operator=( const ISimplyConnectedCompact& other) = delete;
 
-        /*ctor*/
+        //ctor
         ISimplyConnectedCompact(IVector const* const begin, IVector const* const end);
 
-        /*operations*/
+        //operations
         virtual int Intersection(ISimplyConnectedCompact const* const right) = 0;
         virtual int Union(ISimplyConnectedCompact const* const right) = 0;
         virtual int Difference(ISimplyConnectedCompact const* const right) = 0;
         virtual int SymDifference(ISimplyConnectedCompact const* const right) = 0;
 
-        /*utils*/
+        //utils
         virtual QPair<QSharedPointer<IVector>, QSharedPointer<IVector> > getBoundaries() = 0;
         virtual QPair<double, double> getBoundaries(unsigned int dim) = 0;
         virtual IVector* getStep() = 0;
@@ -107,9 +108,9 @@ protected:
 
         virtual ISimplyConnectedCompact* clone() const = 0;
 
-        /*dtor*/
+        //dtor
         virtual ~ISimplyConnectedCompact() = default;
-    };
+    };*/
 };
 
 #endif // ICOMPACT_H

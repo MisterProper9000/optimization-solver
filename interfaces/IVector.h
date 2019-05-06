@@ -1,8 +1,6 @@
 #ifndef IVECTOR_H
 #define IVECTOR_H
 
-#include "utils.h"
-
 class IVector
 {
 public:
@@ -33,7 +31,7 @@ public:
     virtual int multiplyByScalar(double scalar) = 0;
     virtual int dotProduct(IVector const* const right) = 0;
     virtual int crossProduct(IVector const* const right) = 0;
-    virtual int norm(NormType type) = 0;
+    virtual int norm(NormType type, double& res) const = 0;
 
     /*comparators*/
     virtual int gt(IVector const* const right, NormType type, bool& result) const = 0;
@@ -41,11 +39,11 @@ public:
     virtual int eq(IVector const* const right, NormType type, bool& result) const = 0;
 
     /*utils*/
-    virtual unsigned int getDim() = 0;
+    virtual unsigned int getDim() const = 0;
     virtual int setCoord(unsigned int index, double elem) = 0;
     virtual int setAllCoords(unsigned int dim, double* coords) = 0;
     virtual int setAllCoords(IVector const* const other) = 0;
-    virtual int getCoordPtr(unsigned int index, double& elem) const = 0;
+    virtual int getCoordPtr(unsigned int index, double*& elem) const = 0;
     virtual IVector* clone() const = 0;
 
     /*dtor*/
