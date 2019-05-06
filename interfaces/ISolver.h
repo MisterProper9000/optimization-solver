@@ -13,6 +13,16 @@ class ISolver
 public:
 
     //need to move ReturnCode from IProblem to its own namespace??
+    enum ReturnCode
+    {
+        ERR_OK = 0,
+        ERR_DIFFERENT_DIMENSIONS,
+        ERR_MEMORY_ALLOCATION,
+        ERR_NORM_NOT_DEFINED,
+        ERR_OUT_OF_RANGE,
+        ERR_VARIABLES_NUMBER_MISMATCH,
+        NO_SOLUTION,
+    };
 
     /*non default copyable*/
     ISolver(const ISolver& other) = delete;
@@ -25,7 +35,7 @@ public:
     virtual int setProblem(IProblem *ptr) = 0;
     virtual int setParams(IProblem *ptr, ICompact* cptr) = 0;
     virtual int solve() = 0;
-    virtual int getRes(double &res)const = 0;
+    virtual int getRes(double &res) const = 0;
     virtual int getSolution(IVector* &vec)const = 0;
     virtual int SetPrecision(double pr) = 0;
     virtual int getQml(QUrl& qml) = 0;
