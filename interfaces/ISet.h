@@ -1,10 +1,9 @@
 #ifndef ISET_H
 #define ISET_H
 
-#include "error.h"
+#include "IVector.h"
 #include "SHARED_EXPORT.h"
 
-class IVector;
 class SHARED_EXPORT ISet
 {
 public:
@@ -18,39 +17,42 @@ public:
     virtual unsigned int getSize() const = 0;
     virtual int clear() = 0;
 
-    /*dtor*/
-    virtual ~ISet() = default;
+    virtual IIterator* end() = 0;
+    virtual IIterator* begin() = 0;
 
-    virtual iterator* end() = 0;
-    virtual iterator* begin() = 0;
+    virtual int deleteIterator(IIterator * pIter) = 0;
+    virtual int getByIterator(IIterator const* pIter, IVector*& pItem) const = 0;
 
-    class iterator
+    class IIterator
     {
     public:
-        virtual int doStep();
-
-    protected:
-        iterator(int step);
-
         virtual int next() = 0;
         virtual int prev() = 0;
+        virtual bool isEnd() const = 0;
+        virtual bool isBegin() const = 0;
+
+    protected:
+        IIterator(ISet const* const set, int pos);
 
         /*dtor*/
-        virtual ~iterator() = default;
+        virtual ~IIterator() = default;
 
     private:
         /*non default copyable*/
-        iterator(const iterator& other) = delete;
-        void operator=( const iterator& other) = delete;
+        IIterator(const IIterator& other) = delete;
+        void operator=(const IIterator& other) = delete;
     };
 
+    /*dtor*/
+    virtual ~ISet() = default;
+
 protected:
-    Set() = default;
+    ISet() = default;
 
 private:
     /*non default copyable*/
     ISet(const ISet& other) = delete;
-    void operator=( const ISet& other) = delete;
+    void operator=(const ISet& other) = delete;
 };
 
 #endif // ISET_H

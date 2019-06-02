@@ -17,14 +17,10 @@ public:
     {
         PROBLEM,
         SOLVER,
-        UNKNOWN,
+        DIMENSION_TYPE
     };
 
     virtual int getId() const = 0;
-
-    /*non default copyable*/
-    IBrocker(const IBrocker& other) = delete;
-    void operator=( const IBrocker& other) = delete;
 
     /*factories*/
     static IBrocker * createBrocker(Type type);
@@ -35,12 +31,15 @@ public:
     virtual int release() = 0;
 
 protected:
-    /**/
-
     /*dtor*/
     virtual ~IBrocker() = default;
 
+    IBrocker() = default;
 
+private:
+    /*non default copyable*/
+    IBrocker(const IBrocker& other) = delete;
+    void operator=(const IBrocker& other) = delete;
 };
 
 #endif // IBROCKER_H

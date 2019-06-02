@@ -15,6 +15,7 @@ enum ErrorEnum {
     ERR_WRONG_PROBLEM,
     ERR_OPEN_ILogImpl,
     ERR_WRITE_TO_ILogImpl,
+    ERR_NOT_IMPLEMENTED,
     ERR_ANY_OTHER,
 
     DIMENSION_ERROR

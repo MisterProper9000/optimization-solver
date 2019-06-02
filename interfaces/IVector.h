@@ -31,13 +31,21 @@ public:
     virtual int subtract(IVector const* const right) = 0;
     virtual int multiplyByScalar(double scalar) = 0;
     virtual int dotProduct(IVector const* const right, double& res) const = 0;
-    virtual int crossProduct(IVector const* const right) = 0;
+    virtual int crossProduct(IVector const* const right)
+    {
+        qt_assert("NOT IMPLEMENTED", __FILE__, __LINE__);
+        return ERR_NOT_IMPLEMENTED;
+    }
 
     /*static operations*/
     static IVector* add(IVector const* const left, IVector const* const right);
     static IVector* subtract(IVector const* const left, IVector const* const right);
     static IVector* multiplyByScalar(IVector const* const left, double scalar);
-    static IVector* crossProduct(IVector const* const left, IVector const* const right);
+    static IVector* crossProduct(IVector const* const left, IVector const* const right)
+    {
+        qt_assert("NOT IMPLEMENTED", __FILE__, __LINE__);
+        return static_cast<IVector*>(0);
+    }
 
     /*comparators*/
     virtual int gt(IVector const* const right, NormType type, bool& result) const = 0;
@@ -62,9 +70,7 @@ protected:
 private:
     /*non default copyable*/
     IVector(const IVector& other) = delete;
-    void operator=( const IVector& other) = delete;
-
-
+    void operator=(const IVector& other) = delete;
 };
 
 #endif // IVECTOR_H
