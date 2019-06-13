@@ -7,13 +7,22 @@
 class SHARED_EXPORT ISet
 {
 public:
+
+    enum InterfaceTypes
+    {
+        INTERFACE_0,
+        DIMENSION_INTERFACE_IMPL
+    };
+
+    virtual int getId() const = 0;
+
     /*factories*/
     static ISet* createSet(unsigned int R_dim);
 
     virtual int put(IVector const* const item) = 0;
     virtual int get(unsigned int index, IVector*& pItem) const = 0;
     virtual int remove(unsigned int index) = 0;
-    virtual int contains(IVector const* const pItem) const = 0;
+    virtual int contains(IVector const* const pItem, bool & rc) const = 0;
     virtual unsigned int getSize() const = 0;
     virtual int clear() = 0;
 
