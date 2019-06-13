@@ -1,48 +1,37 @@
 #ifndef ISOLVER_H
 #define ISOLVER_H
 
-#include <QVector>
 #include <QUrl>
+#include "IProblem.h"
+#include "SHARED_EXPORT.h"
 
-class IProblem;
-class ICompact;
-class IVector;
-
-class ISolver
+class SHARED_EXPORT ISolver
 {
 public:
-
-    //need to move ReturnCode from IProblem to its own namespace??
-    enum ReturnCode
+    enum InterfaceTypes
     {
-        ERR_OK = 0,
-        ERR_DIFFERENT_DIMENSIONS,
-        ERR_MEMORY_ALLOCATION,
-        ERR_NORM_NOT_DEFINED,
-        ERR_OUT_OF_RANGE,
-        ERR_VARIABLES_NUMBER_MISMATCH,
-        NO_SOLUTION,
+        INTERFACE_0,
+        DIMENSION_INTERFACE_IMPL
     };
 
-    /*non default copyable*/
-    ISolver(const ISolver& other) = delete;
-    void operator=( const ISolver& other) = delete;
+    virtual int getId() const = 0;
 
-    static ISolver* createSolver();
-
-    virtual int setParams(IVector const* const params) = 0;
+    virtual int setParams(IVector const* params) = 0;
     virtual int setParams(QString& str) = 0;
     virtual int setProblem(IProblem *ptr) = 0;
-    virtual int setParams(IProblem *ptr, ICompact* cptr) = 0;
     virtual int solve() = 0;
-    virtual int getRes(double &res) const = 0;
     virtual int getSolution(IVector* &vec)const = 0;
-    virtual int SetPrecision(double pr) = 0;
-    virtual int getQml(QUrl& qml) = 0;
-    virtual ~ISolver() = default;
+    virtual int getQml(QUrl& qml) const = 0;
 
 protected:
+    virtual ~ISolver() = default;
+
     ISolver() = default;
+
+private:
+    /*non default copyable*/
+    ISolver(const ISolver& other) = delete;
+    void operator=(const ISolver& other) = delete;
 };
 
 #endif // ISOLVER_H

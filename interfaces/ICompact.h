@@ -1,116 +1,115 @@
 #ifndef ICOMPACT_H
 #define ICOMPACT_H
 
-#include <QVector>
-#include <QPair>
-#include <QSharedPointer>
 #include "IVector.h"
+#include "SHARED_EXPORT.h"
 
-class ICompact
+class SHARED_EXPORT ICompact
 {
 public:
-    enum ErrorEnum {
-        ERR_OK,
-        ERR_WRONG_ARG,
-        ERR_OUT_OF_MEMORY,
-        ERR_DIMENSIONS_MISMATCH,
-        ERR_INVALID_STEP,
+    enum InterfaceTypes
+    {
+        INTERFACE_0,
+        DIMENSION_INTERFACE_IMPL
     };
 
-    /*non default copyable*/
-    ICompact(const ICompact& other) = delete;
-    void operator=( const ICompact& other) = delete;
+    virtual int getId() const = 0;
 
     /*factories*/
-    static ICompact* createCompact(IVector const* const begin, IVector const* const end);
-    static ICompact* createCompact(int domainsCount, IVector const* const begin, IVector const* const end,...);
+    static ICompact* createCompact(IVector const* const begin, IVector const* const end, IVector const* const step = 0);
 
     /*operations*/
     virtual int Intersection(ICompact const& c) = 0;
-    virtual int Union(ICompact const& c) = 0;
-    virtual int Difference(ICompact const& c) = 0;
-    virtual int SymDifference(ICompact const& c) = 0;
-    virtual int MakeConvex() = 0;
+    virtual int Union(ICompact const& c)
+    {
+        qt_assert("NOT IMPLEMENTED", __FILE__, __LINE__);
+        return ERR_NOT_IMPLEMENTED;
+    }
+    virtual int Difference(ICompact const& c)
+    {
+        qt_assert("NOT IMPLEMENTED", __FILE__, __LINE__);
+        return ERR_NOT_IMPLEMENTED;
+    }
+    virtual int SymDifference(ICompact const& c)
+    {
+        qt_assert("NOT IMPLEMENTED", __FILE__, __LINE__);
+        return ERR_NOT_IMPLEMENTED;
+    }
+    virtual int MakeConvex() { return ERR_OK; }
 
-    /*utils*/
-    //virtual QPair<QSharedPointer<IVector>, QSharedPointer<IVector> > getBoundaries() const = 0;
-    //virtual QPair<double, double> getBoundaries(unsigned int dim) = 0;
-    virtual IVector* getMaxStep() const = 0;
-    virtual IVector* getDomainStep(unsigned int domainIdx) const = 0;
+    /*static operations*/
+    static ICompact* Intersection(ICompact const* const left, ICompact const* const right);
+    static ICompact* Union(ICompact const* const left, ICompact const* const right)
+    {
+        qt_assert("NOT IMPLEMENTED", __FILE__, __LINE__);
+        return static_cast<ICompact*>(0);
+    }
+    static ICompact* Difference(ICompact const* const left, ICompact const* const right)
+    {
+        qt_assert("NOT IMPLEMENTED", __FILE__, __LINE__);
+        return static_cast<ICompact*>(0);
+    }
+    static ICompact* SymDifference(ICompact const* const left, ICompact const* const right)
+    {
+        qt_assert("NOT IMPLEMENTED", __FILE__, __LINE__);
+        return static_cast<ICompact*>(0);
+    }
+    static ICompact* MakeConvex(ICompact const* const src)
+    {
+        if (!src) return static_cast<ICompact*>(0);
+        else return src->clone();
+    }
 
-    virtual iterator* end(unsigned int idx) = 0;
-    virtual iterator* begin(unsigned int idx) = 0;
+    virtual int deleteIterator(IIterator * pIter) = 0;
+    virtual int getByIterator(IIterator const* pIter, IVector*& pItem) const = 0;
+
+    virtual IIterator* end(IVector const* const step = 0) = 0;
+    virtual IIterator* begin(IVector const* const step = 0) = 0;
 
     virtual int isContains(IVector const* const vec, bool& result) const = 0;
-    virtual int isSubSet(ICompact const* const other) = 0;
-    virtual int isSimplyConn(bool& result) = 0;
-    virtual int isIntersects(ICompact const* const other, bool& result) = 0;
-
-    virtual int domainCount(unsigned int& result) = 0;
-    //virtual ICompact* getDomain(unsigned int domainIdx) = 0;
+    virtual int isSubSet(ICompact const* const other) const = 0;
+    virtual int isSimplyConn(bool& result) const
+    {
+        result = true;
+        return ERR_OK;
+    }
+    virtual int isIntersects(ICompact const* const other, bool& result) const = 0;
+    virtual int getNearestNeighbor(IVector const* vec, IVector *& nn) const = 0;
 
     virtual ICompact* clone() const = 0;
-    virtual ICompact* cloneDomain(unsigned int domainIdx) const = 0;
 
     /*dtor*/
     virtual ~ICompact() = default;
 
-    class iterator
+    class IIterator
     {
     public:
-        /*non default copyable*/
-        iterator(const iterator& other) = delete;
-        void operator=( const iterator& other) = delete;
+        //adds step to current value in iterator
+        virtual int doStep() = 0;
 
-        virtual iterator* begin() = 0;
-        virtual iterator* end() = 0;
-
-        virtual int setDirection(IVector const* const dir) = 0;
+        //change step
+        virtual int setStep(IVector const* const step) = 0;
 
 
     protected:
-        iterator() = default;
-        //virtual int isDirectionValid() = 0;
+        IIterator(ICompact const* const compact, int pos, IVector const* const step);
+
         /*dtor*/
-        virtual ~iterator() = default;
+        virtual ~IIterator() = default;
+
+    private:
+        /*non default copyable*/
+        IIterator(const IIterator& other) = delete;
+        void operator=(const IIterator& other) = delete;
     };
 
 protected:
-/*
     ICompact() = default;
 
-
-    class ISimplyConnectedCompact
-    {
-    public:
-        //non default copyable
-        ISimplyConnectedCompact(const ISimplyConnectedCompact& other) = delete;
-        void operator=( const ISimplyConnectedCompact& other) = delete;
-
-        //ctor
-        ISimplyConnectedCompact(IVector const* const begin, IVector const* const end);
-
-        //operations
-        virtual int Intersection(ISimplyConnectedCompact const* const right) = 0;
-        virtual int Union(ISimplyConnectedCompact const* const right) = 0;
-        virtual int Difference(ISimplyConnectedCompact const* const right) = 0;
-        virtual int SymDifference(ISimplyConnectedCompact const* const right) = 0;
-
-        //utils
-        virtual QPair<QSharedPointer<IVector>, QSharedPointer<IVector> > getBoundaries() = 0;
-        virtual QPair<double, double> getBoundaries(unsigned int dim) = 0;
-        virtual IVector* getStep() = 0;
-
-        virtual int isContains(IVector const* const vec, bool& result) const = 0;
-        virtual int isSubSet(ISimplyConnectedCompact const* const other) = 0;
-        virtual int isSimplyConn(bool& result) = 0;
-        virtual int isIntersects(ISimplyConnectedCompact const* const other, bool& result) = 0;
-
-        virtual ISimplyConnectedCompact* clone() const = 0;
-
-        //dtor
-        virtual ~ISimplyConnectedCompact() = default;
-    };*/
+private:
+    /*non default copyable*/
+    ICompact(const ICompact& other) = delete;
+    void operator=(const ICompact& other) = delete;
 };
 
 #endif // ICOMPACT_H
