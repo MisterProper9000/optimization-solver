@@ -56,9 +56,9 @@ public:
     virtual unsigned int getDim() const = 0;
     virtual int norm(NormType type, double& res) const = 0;
     virtual int setCoord(unsigned int index, double elem) = 0;
+    virtual int getCoord(unsigned int index, double & elem) = 0;
     virtual int setAllCoords(unsigned int dim, double* coords) = 0;
-    virtual int setAllCoords(IVector const* const other) = 0;
-    virtual int getCoordPtr(unsigned int index, double const*& elem) const = 0;
+    virtual int getCoordsPtr(unsigned int & dim, double const*& elem) const = 0;
     virtual IVector* clone() const = 0;
 
     /*dtor*/
