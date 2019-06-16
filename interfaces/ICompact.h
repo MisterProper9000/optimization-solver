@@ -19,7 +19,11 @@ public:
     static ICompact* createCompact(IVector const* const begin, IVector const* const end, IVector const* const step = 0);
 
     /*operations*/
-    virtual int Intersection(ICompact const& c) = 0;
+    virtual int Intersection(ICompact const& c)
+    {
+        qt_assert("NOT IMPLEMENTED", __FILE__, __LINE__);
+        return ERR_NOT_IMPLEMENTED;
+    }
     virtual int Union(ICompact const& c)
     {
         qt_assert("NOT IMPLEMENTED", __FILE__, __LINE__);
@@ -38,7 +42,11 @@ public:
     virtual int MakeConvex() { return ERR_OK; }
 
     /*static operations*/
-    static ICompact* Intersection(ICompact const* const left, ICompact const* const right);
+    static ICompact* Intersection(ICompact const* const left, ICompact const* const right)
+    {
+        qt_assert("NOT IMPLEMENTED", __FILE__, __LINE__);
+        return static_cast<ICompact*>(0);
+    }
     static ICompact* Union(ICompact const* const left, ICompact const* const right)
     {
         qt_assert("NOT IMPLEMENTED", __FILE__, __LINE__);
@@ -73,7 +81,11 @@ public:
         result = true;
         return ERR_OK;
     }
-    virtual int isIntersects(ICompact const* const other, bool& result) const = 0;
+    virtual int isIntersects(ICompact const* const other, bool& result) const
+    {
+        qt_assert("NOT IMPLEMENTED", __FILE__, __LINE__);
+        return ERR_NOT_IMPLEMENTED;
+    }
     virtual int getNearestNeighbor(IVector const* vec, IVector *& nn) const = 0;
 
     virtual ICompact* clone() const = 0;
