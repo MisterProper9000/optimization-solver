@@ -4,21 +4,21 @@
 #
 #-------------------------------------------------
 
-QT       += core
+QT       += gui sql printsupport
 
-QT       -= gui
-
-TARGET = Interfaces
+TARGET   =  Interfaces
 CONFIG   += console
-CONFIG   -= app_bundle
 
 TEMPLATE = app
 
 
 SOURCES += main.cpp \
-    Interfaces/util.cpp \
-    Interfaces/IVectorImpl.cpp \
-    Interfaces/ICompactImpl.cpp
+    BrokerImpl.cpp\
+    ISet.cpp \
+    controller.cpp \
+    sqlconnectiondialog.cpp \
+    IBrockerImpl.cpp \
+    IProblemImpl.cpp
 
 HEADERS += \
     Interfaces/IBrocker.h \
@@ -29,4 +29,48 @@ HEADERS += \
     Interfaces/ILog.h \
     Interfaces/error.h \
     Interfaces/ISet.h \
-    Interfaces/SHARED_EXPORT.h
+    Interfaces/SHARED_EXPORT.h \
+    controller.h \
+    sqlconnectiondialog.h \
+    Interfaces/IBrockerImpl.h
+
+FORMS += \
+    controller.ui \
+    sqlconnectiondialog.ui
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
