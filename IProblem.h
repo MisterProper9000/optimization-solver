@@ -36,7 +36,7 @@ public:
     virtual int derivativeGoalFunctionByParams(size_t order, size_t idx, DerivedType dr, double& value, IVector const* params) const = 0;
 
 protected:
-    virtual ~IProblem() = default;
+    virtual ~IProblem(){};
 
     IProblem() = default;
 

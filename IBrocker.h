@@ -32,7 +32,7 @@ public:
 
 protected:
     /*dtor*/
-    virtual ~IBrocker() = default;
+    virtual ~IBrocker(){}
 
     IBrocker() = default;
 
