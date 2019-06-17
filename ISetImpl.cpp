@@ -65,7 +65,7 @@ namespace {
  */
 int ISetImpl::getId() const
 {
-    return DIMENSION_INTERFACE_IMPL;
+    return INTERFACE_0;
 }
 //------------------------------------------------------------------------------------------------
 /**
@@ -138,21 +138,17 @@ int ISetImpl::get(unsigned int index, IVector*& pItem) const
         ILog::report("Error: the Set is empty, can't get any item");
         return ERR_ANY_OTHER;
     }
-    if (!pItem)
-    {
-        ILog::report("Error: invalid vector to get data");
-        return ERR_WRONG_ARG;
-    }
+    //if (pItem)
+    //{
+    //    ILog::report("Error: pItem already points to an instance of IVector, expected clear pointer");
+    //    return ERR_WRONG_ARG;
+    //}
     if (index >= (unsigned int)m_data.size()) {
-        ILog::report("Error: get element of vector out of range");
+        ILog::report("Error: get element of set out of range");
         return ERR_OUT_OF_RANGE;
     }
-    if (pItem->getDim() != m_dim)
-    {
-        ILog::report("Error: get vector with wrong dimension");
-        return ERR_DIMENSIONS_MISMATCH;
-    }
-    pItem = const_cast<IVector*>(m_data[index]);
+
+    pItem = m_data[index]->clone();
     return ERR_OK;
 }
 //------------------------------------------------------------------------------------------------
@@ -206,9 +202,17 @@ unsigned int ISetImpl::getSize() const
  */
 int ISetImpl::clear()
 {
-   m_data.clear();
-   iteratorList.clear();
-   return ERR_OK;
+    for(unsigned int i = 0; i < m_data.size(); i++)
+    {
+        delete m_data[i];
+    }
+    m_data.clear();
+    for(unsigned int i = 0; i < iteratorList.size(); i++)
+    {
+        delete iteratorList[i];
+    }
+    iteratorList.clear();
+    return ERR_OK;
 }
 //------------------------------------------------------------------------------------------------
 /**
@@ -277,14 +281,20 @@ int ISetImpl::deleteIterator(IIterator * pIter)
         return ERR_WRONG_ARG;
     }
 
-    for (int i = 0; i < iteratorList.size(); i++)
+    if(this != static_cast<const IIteratorImpl*>(pIter)->getSet())
     {
-        if (pIter == iteratorList[i])
-        {
-            delete iteratorList[i];
-            iteratorList.remove(i);
-        }
+        ILog::report("Error: deleteIterator got iterator which doesn't belong to this instance of ISet");
     }
+
+    int idx = iteratorList.indexOf(static_cast<const IIteratorImpl*>(pIter));
+    if(idx == -1)
+    {
+        ILog::report("Error: iterator belongs to this instance of ISet, but not to iterator list");
+        return ERR_WRONG_ARG;
+    }
+    delete iteratorList[idx];
+    iteratorList.remove(idx);
+
     return ERR_OK;
 }
 //------------------------------------------------------------------------------------------------
@@ -300,22 +310,26 @@ int ISetImpl::getByIterator(IIterator const* pIter, IVector*& pItem) const
         ILog::report("Error: the Set is empty");
         return ERR_ANY_OTHER;
     }
-    if (!pIter || !pItem) {
+
+    if (!pIter) {
         ILog::report("Error: invalid argument in function getByIterator()");
         return ERR_WRONG_ARG;
     }
-    if (pItem->getDim() != m_dim)
+
+    if(this != static_cast<const IIteratorImpl*>(pIter)->getSet())
     {
-        ILog::report("Error: get vector with wrong dimension");
-        return ERR_DIMENSIONS_MISMATCH;
+        ILog::report("Error: getByIterator got iterator which doesn't belong to this instance of ISet");
     }
+
     unsigned int idx = static_cast<const IIteratorImpl*>(pIter)->getPos();
     if (idx < 0 || idx >= getSize())
     {
         ILog::report("Error: wrong argument, iterator out of range");
         return ERR_OUT_OF_RANGE;
     }
-    pItem = const_cast<IVector*>(m_data[idx]);
+    if(pItem)
+        delete pItem;
+    pItem = m_data[idx]->clone();
     return ERR_OK;
 }
 //------------------------------------------------------------------------------------------------
