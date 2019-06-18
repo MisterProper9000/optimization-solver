@@ -88,6 +88,8 @@ namespace{
     };
 }
 
+ICompact::IIterator::IIterator(const ICompact *const compact, int pos, const IVector *const step){}
+
 int ICompactImpl::getId() const
 {
     return INTERFACE_0;
@@ -124,7 +126,7 @@ ICompact* ICompactImpl::createCompact(const IVector *const begin, const IVector 
                 return 0;
             }
         }
-        double d, card;
+        double d, card = 1;
         for (unsigned int i = 0; i < step->getDim(); i++) // check if step data match the unsigned int
         {
             step->getCoord(i,d);
@@ -180,7 +182,7 @@ ICompactImpl::ICompactImpl(const IVector *const begin, const IVector *const end,
     {
         m_steps = step->clone();
 
-        m_cardinality = 0;
+        m_cardinality = 1;
         double d;
         for (unsigned int i = 0; i < m_dim; i++)
         {
@@ -312,7 +314,7 @@ int ICompactImpl::getNearestNeighbor(const IVector *vec, IVector *&nn) const
 
 ICompactImpl::IIterator* ICompactImpl::end(IVector const* const step)
 {
-    IIterator* it = new IIteratorImpl(this,m_cardinality,step);
+    IIterator* it = new IIteratorImpl(this,m_cardinality-1,step);
     iterators.push_back(dynamic_cast<IIteratorImpl*>(it));
     return it;
 }
