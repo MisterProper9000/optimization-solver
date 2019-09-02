@@ -16,17 +16,13 @@ TEMPLATE = app
 
 
 SOURCES += main.cpp \
-    Interfaces/util.cpp \
-    Interfaces/IVectorImpl.cpp \
-    Interfaces/ICompactImpl.cpp
+    dll_code/IVectorImpl.cpp \
+    dll_code/ISetImpl.cpp
 
 HEADERS += \
-    Interfaces/IBrocker.h \
-    Interfaces/ICompact.h \
-    Interfaces/IProblem.h \
-    Interfaces/ISolver.h \
-    Interfaces/IVector.h \
-    Interfaces/ILog.h \
-    Interfaces/error.h \
-    Interfaces/ISet.h \
-    Interfaces/SHARED_EXPORT.h
+    IVector.h \
+    ILog.h \
+    error.h \
+    ISet.h \
+    SHARED_EXPORT.h
+

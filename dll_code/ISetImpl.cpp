@@ -84,7 +84,7 @@ ISet* ISet::createSet(unsigned int R_dim)
 ISet* ISetImpl::createSet(unsigned int R_dim)
 {
     if (R_dim == 0) {
-        ILog::report("Error: can't create set with zero dimension");
+        ILog::report("ISet.createSet: can't create set with zero dimension");
         return 0;
     }
     return new ISetImpl(R_dim);
@@ -114,12 +114,12 @@ int ISetImpl::put(IVector const* const item)
 {
     if (!item)
     {
-        ILog::report("Error: push invalid vector");
+        ILog::report("ISet.put: push invalid vector");
         return ERR_WRONG_ARG;
     }
     if (item->getDim() != m_dim)
     {
-        ILog::report("Error: push vector with wrong dimension");
+        ILog::report("ISet.put: push vector with wrong dimension");
         return ERR_DIMENSIONS_MISMATCH;
     }
     m_data.push_back(item);
@@ -135,16 +135,16 @@ int ISetImpl::get(unsigned int index, IVector*& pItem) const
 {
     if (getSize() == 0)
     {
-        ILog::report("Error: the Set is empty, can't get any item");
+        ILog::report("ISet.get: the Set is empty, can't get any item");
         return ERR_ANY_OTHER;
     }
     //if (pItem)
     //{
-    //    ILog::report("Error: pItem already points to an instance of IVector, expected clear pointer");
+    //    ILog::report("ISet.get: pItem already points to an instance of IVector, expected clear pointer");
     //    return ERR_WRONG_ARG;
     //}
     if (index >= (unsigned int)m_data.size()) {
-        ILog::report("Error: get element of set out of range");
+        ILog::report("ISet.get: get element of set out of range");
         return ERR_OUT_OF_RANGE;
     }
 
@@ -159,7 +159,7 @@ int ISetImpl::get(unsigned int index, IVector*& pItem) const
 int ISetImpl::remove(unsigned int index)
 {
     if (index >= (unsigned int)m_data.size()) {
-        ILog::report("Error: remove element of vector out of range");
+        ILog::report("ISet.remove: remove element of vector out of range");
         return ERR_OUT_OF_RANGE;
     }
     m_data.remove(index);
@@ -176,13 +176,13 @@ int ISetImpl::contains(IVector const* const pItem, bool &rc) const
     if (getSize() == 0)
     {
         rc = false;
-        ILog::report("Error: the Set is empty");
+        ILog::report("ISet.contains: the Set is empty");
         return ERR_ANY_OTHER;
     }
     if (pItem->getDim() != m_dim)
     {
         rc = false;
-        ILog::report("Error: checking vector with wrong dimension");
+        ILog::report("ISet.contains: checking vector with wrong dimension");
         return ERR_DIMENSIONS_MISMATCH;
     }
     rc = m_data.contains(pItem);
@@ -246,7 +246,7 @@ ISetImpl::IIterator* ISetImpl::end()
 {
     if (getSize() == 0)
     {
-        ILog::report("Error: can't iterate, the Set is empty");
+        ILog::report("ISet.IIterator.end: can't iterate, the Set is empty");
         return 0;
     }
     ISetImpl::IIteratorImpl* it = new ISetImpl::IIteratorImpl(this, getSize() - 1);
@@ -261,7 +261,7 @@ ISetImpl::IIterator* ISetImpl::begin()
 {
     if (getSize() == 0)
     {
-        ILog::report("Error: can't iterate, the Set is empty");
+        ILog::report("ISet.IIterator.begin: can't iterate, the Set is empty");
         return 0;
     }
     ISetImpl::IIteratorImpl* it = new ISetImpl::IIteratorImpl(this, 0);
@@ -277,19 +277,19 @@ int ISetImpl::deleteIterator(IIterator * pIter)
 {
     if (!pIter)
     {
-        ILog::report("Error: invalid argument in function deleteIterator()");
+        ILog::report("ISet.deleteIterator: invalid argument in function deleteIterator()");
         return ERR_WRONG_ARG;
     }
 
     if(this != static_cast<const IIteratorImpl*>(pIter)->getSet())
     {
-        ILog::report("Error: deleteIterator got iterator which doesn't belong to this instance of ISet");
+        ILog::report("ISet.deleteIterator: got iterator which doesn't belong to this instance of ISet");
     }
 
     int idx = iteratorList.indexOf(static_cast<const IIteratorImpl*>(pIter));
     if(idx == -1)
     {
-        ILog::report("Error: iterator belongs to this instance of ISet, but not to iterator list");
+        ILog::report("ISet.deleteIterator: iterator belongs to this instance of ISet, but not to iterator list");
         return ERR_WRONG_ARG;
     }
     delete iteratorList[idx];
@@ -307,24 +307,24 @@ int ISetImpl::getByIterator(IIterator const* pIter, IVector*& pItem) const
 {
     if (getSize() == 0)
     {
-        ILog::report("Error: the Set is empty");
+        ILog::report("ISet.getByIterator: the Set is empty");
         return ERR_ANY_OTHER;
     }
 
     if (!pIter) {
-        ILog::report("Error: invalid argument in function getByIterator()");
+        ILog::report("ISet.getByIterator: invalid argument in function getByIterator()");
         return ERR_WRONG_ARG;
     }
 
     if(this != static_cast<const IIteratorImpl*>(pIter)->getSet())
     {
-        ILog::report("Error: getByIterator got iterator which doesn't belong to this instance of ISet");
+        ILog::report("ISet.getByIterator: getByIterator got iterator which doesn't belong to this instance of ISet");
     }
 
     unsigned int idx = static_cast<const IIteratorImpl*>(pIter)->getPos();
     if (idx < 0 || idx >= getSize())
     {
-        ILog::report("Error: wrong argument, iterator out of range");
+        ILog::report("ISet.getByIterator: wrong argument, iterator out of range");
         return ERR_OUT_OF_RANGE;
     }
     if(pItem)
@@ -339,7 +339,7 @@ int ISetImpl::getByIterator(IIterator const* pIter, IVector*& pItem) const
 int ISetImpl::IIteratorImpl::next()
 {
     if (this->m_pos == m_set->getSize() - 1) {
-        ILog::report("Error: iterator can't move out of range");
+        ILog::report("ISet.IIterator.next: iterator can't move out of range");
         return ERR_OUT_OF_RANGE;
     }
     this->m_pos += 1;
@@ -352,7 +352,7 @@ int ISetImpl::IIteratorImpl::next()
 int ISetImpl::IIteratorImpl::prev()
 {
     if (this->m_pos == 0) {
-        ILog::report("Error: iterator can't move out of range");
+        ILog::report("ISet.IIterator.prev: iterator can't move out of range");
         return ERR_OUT_OF_RANGE;
     }
     this->m_pos -= 1;
