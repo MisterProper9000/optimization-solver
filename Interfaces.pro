@@ -16,17 +16,14 @@ TEMPLATE = app
 
 
 SOURCES += main.cpp \
-    Interfaces/util.cpp \
-    Interfaces/IVectorImpl.cpp \
-    Interfaces/ICompactImpl.cpp
+    dll_code/ICompactImpl.cpp \
+    dll_code/IVectorImpl.cpp
 
 HEADERS += \
-    Interfaces/IBrocker.h \
-    Interfaces/ICompact.h \
-    Interfaces/IProblem.h \
-    Interfaces/ISolver.h \
-    Interfaces/IVector.h \
-    Interfaces/ILog.h \
-    Interfaces/error.h \
-    Interfaces/ISet.h \
-    Interfaces/SHARED_EXPORT.h
+    ICompact.h \
+    IVector.h \
+    ILog.h \
+    error.h \
+    SHARED_EXPORT.h
+
+LIBS += "..\Interfaces-build-desktop-Qt_4_7_4__mingw_________\debug\ILog.dll"

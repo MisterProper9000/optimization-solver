@@ -69,7 +69,7 @@ namespace{
 
     protected:
         ICompactImpl() = default;
-        ICompactImpl(IVector const* const begin, IVector const* const end, IVector const* const step = 0);
+        ICompactImpl(IVector* begin, IVector* end, IVector* step, unsigned int card);
 
     private:
 
@@ -104,110 +104,133 @@ ICompact* ICompactImpl::createCompact(const IVector *const begin, const IVector 
 {
     if (!begin || !end)
     {
-        ILog::report("Error: ICompact constructor missed begin or end");
+        ILog::report("ICompact.createCompact: constructor missed begin or end");
         return 0;
     }
 
-    if (step) //non-default step
+    if (begin->getDim() != end->getDim())
     {
-        if (step->getDim() != begin->getDim() || step->getDim() != end->getDim() || begin->getDim() != end->getDim())
-        {
-            ILog::report("Error: Dimension mismatch in createCompact");
-            return 0;
-        }
-        double b,e;
-        for(unsigned int i = 0; i<end->getDim(); i++)
-        {
-            begin->getCoord(i,b);
-            end->getCoord(i,e);
-            if(b == e)
-            {
-                ILog::report("Error: degenerate segment in compact construction");
-                return 0;
-            }
-        }
-        double d, card = 1;
-        for (unsigned int i = 0; i < step->getDim(); i++) // check if step data match the unsigned int
-        {
-            step->getCoord(i,d);
-            if(ABS(card) > (unsigned int)((double)UINT_MAX/ABS(d)))
-            {
-                ILog::report("Error: there are too many vertices in the compact grid");
-                return 0;
-            }
-            else
-                card *= d;
-        }
-        return new ICompactImpl(begin, end, step);
-
+        ILog::report("ICompact.createCompact: dimension mismatch in createCompact");
+        return 0;
     }
-    else // default step
+
+    int dim = begin->getDim();
+
+    double* t_begin = new double[dim];
+    double* t_end = new double[dim];
+    if(!t_begin || t_end)
     {
-        if (begin->getDim() != end->getDim())
-        {
-            ILog::report("Error: Dimension mismatch in createCompact");
-            return 0;
-        }
-        double b,e;
-        for(unsigned int i = 0; i<end->getDim(); i++)
-        {
-            begin->getCoord(i,b);
-            end->getCoord(i,e);
-            if(b == e)
-            {
-                ILog::report("Error: degenerate segment in compact construction");
-                return 0;
-            }
-        }
-        return new ICompactImpl(begin, end);
+        ILog::report("ICompact.createCompact: not enough memory");
+        return 0;
     }
-}
 
-ICompactImpl::ICompactImpl(const IVector *const begin, const IVector *const end, const IVector *const step):m_dim(begin->getDim())
-{
-    double* t_begin = new double[m_dim];
-    double* t_end = new double[m_dim];
     double b,e;
-    for (unsigned int i = 0; i < m_dim; i++)
+    for (unsigned int i = 0; i < dim; i++)
     {
         begin->getCoord(i, b);
         end->getCoord(i, e);
         t_begin[i] = (b < e)?b:e;
         t_end[i] = (b < e)?e:b;
     }
-    m_begin = IVector::createVector(m_dim, t_begin);
-    m_end = IVector::createVector(m_dim, t_end);
 
-    if (step) // non-default step
-    {
-        m_steps = step->clone();
+    IVector* try_begin = IVector::createVector(dim, t_begin);
+    IVector* try_end = IVector::createVector(dim, t_end);
 
-        m_cardinality = 1;
-        double d;
-        for (unsigned int i = 0; i < m_dim; i++)
-        {
-            m_steps->getCoord(i,d);
-            m_cardinality *= d;
-        }
-    }
-    else // default step
-    {
-        double gridStep = floor(pow((double)UINT_MAX,1./m_dim));
-        double* tmp = new double[m_dim];
-        for(unsigned int i = 0; i < m_dim; i++)
-        {
-            tmp[i] = gridStep;
-            m_cardinality *= gridStep;
-        }
-        m_steps = IVector::createVector(m_dim, tmp);
-        delete[] tmp;
-        tmp = 0;
-    }
     delete[] t_begin;
     t_begin = 0;
     delete[] t_end;
     t_end = 0;
+
+    if(!try_begin || !try_end)
+    {
+        ILog::report("ICompact.createCompact: not enough memory");
+        return 0;
+    }
+
+    IVector* try_steps = 0;
+    unsigned int card = 1;
+
+    if (step) //non-default step
+    {
+        if (step->getDim() != begin->getDim() || step->getDim() != end->getDim() || begin->getDim() != end->getDim())
+        {
+            ILog::report("ICompact.createCompact: dimension mismatch in createCompact");
+            return 0;
+        }
+        /*double b,e;
+        for(unsigned int i = 0; i<end->getDim(); i++)
+        {
+            begin->getCoord(i,b);
+            end->getCoord(i,e);
+            /*if(b == e)
+            {
+                ILog::report("ICompact.createCompact: degenerate segment in compact construction");
+                return 0;
+            }
+        }*/
+        double d;
+
+        for (unsigned int i = 0; i < dim; i++) // check if step data match the unsigned int
+        {
+            step->getCoord(i,d);
+            if((ABS(card) > (unsigned int)((double)UINT_MAX/ABS(d))))
+            {
+                ILog::report("ICompact.createCompact: there are too many vertices in the compact grid");
+                return 0;
+            }
+            else
+                card *= (unsigned int)ABS(d);
+        }
+        try_steps = step->clone();
+        if(!try_steps)
+        {
+            ILog::report("ICompact.createCompact: not enough memory");
+            return 0;
+        }
+        return new ICompactImpl(try_begin, try_end, try_steps, card);
+
+    }
+    else // default step
+    {
+        double gridStep = floor(pow((double)UINT_MAX,1./dim));
+        double* tmp = new double[dim];
+        if(!tmp)
+        {
+            ILog::report("ICompact.createCompact: not enough memory");
+            return 0;
+        }
+        unsigned int card = 1;
+        for(unsigned int i = 0; i < dim; i++)
+        {
+            tmp[i] = gridStep;
+            card *= (unsigned int)ABS(gridStep);
+        }
+        try_steps = IVector::createVector(dim, tmp);
+
+        delete[] tmp;
+        tmp = 0;
+
+        if(!try_steps)
+        {
+            ILog::report("ICompact.createCompact: not enough memory");
+            return 0;
+        }
+        /*double b,e;
+        for(unsigned int i = 0; i<end->getDim(); i++)
+        {
+            begin->getCoord(i,b);
+            end->getCoord(i,e);
+            if(b == e)
+            {
+                ILog::report("ICompact.createCompact: degenerate segment in compact construction");
+                return 0;
+            }
+        }*/
+        return new ICompactImpl(try_begin, try_end, try_steps, card);
+    }
 }
+
+ICompactImpl::ICompactImpl(IVector* begin, IVector* end, IVector* step, unsigned int card):m_dim(begin->getDim()), m_begin(begin), m_end(end), m_steps(step), m_cardinality(card){}
 
 ICompact* ICompactImpl::clone() const
 {
@@ -218,19 +241,19 @@ int ICompactImpl::deleteIterator(IIterator *pIter)
 {
     if(!pIter)
     {
-        ILog::report("Error: deleteIterator got nullptr, expected ICompact::IITerator pointer");
+        ILog::report("ICompact.deleteIterator: got nullptr, expected ICompact::IITerator pointer");
         return ERR_WRONG_ARG;
     }
 
     if(this != dynamic_cast<IIteratorImpl*>(pIter)->getCompact())
     {
-        ILog::report("Error: deleteIterator tries to delete iterator which doesn't belong to this instance of ICompact");
+        ILog::report("ICompact.deleteIterator: tries to delete iterator which doesn't belong to this instance of ICompact");
         return ERR_WRONG_ARG;
     }
     int idx = iterators.indexOf(dynamic_cast<IIteratorImpl*>(pIter));
     if (idx == -1)
     {
-        ILog::report("Error: deleteIterator tries to delete iterator which doesn't belong to this instance of ICompact");
+        ILog::report("ICompact.deleteIterator: tries to delete iterator which doesn't belong to this instance of ICompact");
         return ERR_WRONG_ARG;
     }
     delete iterators[idx];
@@ -243,12 +266,12 @@ int ICompactImpl::getByIterator(const IIterator *pIter, IVector *&pItem) const
 {
     if(!pIter)
     {
-        ILog::report("Error: ICompact.getByIterator got nullptr, expected ICompact::IITerator pointer");
+        ILog::report("ICompact.getByIterator: got nullptr, expected ICompact::IITerator pointer");
         return ERR_WRONG_ARG;
     }
     if(this != dynamic_cast<const IIteratorImpl*>(pIter)->getCompact())
     {
-        ILog::report("Error: getByIterator got iterator which doesn't belong to this instance of ICompact");
+        ILog::report("ICompact.getByIterator: got iterator which doesn't belong to this instance of ICompact");
         return ERR_WRONG_ARG;
     }
 
@@ -269,19 +292,19 @@ int ICompactImpl::getNearestNeighbor(const IVector *vec, IVector *&nn) const
 {
     if(!vec)
     {
-        ILog::report("Error: getNearestNeighbor got nullptrm expected IVector pointer");
+        ILog::report("Icompact.getNearestNeighbor: got nullptrm expected IVector pointer");
         return ERR_WRONG_ARG;
     }
     if(vec->getDim() != m_dim)
     {
-        ILog::report("Error: Dimension mismatch in getNearestNeighbor");
+        ILog::report("Icompact.getNearestNeighbor: dimension mismatch in getNearestNeighbor");
         return ERR_WRONG_ARG;
     }
     bool contains;
     isContains(vec, contains);
     if(!contains)
     {
-        ILog::report("Error: ICompact.getNearestNeighbor can't find nearest for vector outside the compact");
+        ILog::report("Icompact.getNearestNeighbor: can't find nearest for vector outside the compact");
         return ERR_WRONG_ARG;
     }
     double* tmp = new double[m_dim];
@@ -330,12 +353,12 @@ int ICompactImpl::isContains(IVector const* const vec, bool& result) const
 {
     if(!vec)
     {
-        ILog::report("Error: isContains got nullptrm expected IVector pointer");
+        ILog::report("IComapct.isContains: got nullptrm expected IVector pointer");
         return ERR_WRONG_ARG;
     }
     if(vec->getDim() != m_dim)
     {
-        ILog::report("Error: Dimension mismatch in isContains");
+        ILog::report("IComapct.isContains: dimension mismatch in isContains");
         return ERR_WRONG_ARG;
     }
     result = false;
@@ -380,26 +403,26 @@ int ICompactImpl::IIteratorImpl::doStep()
         IVector* tmp = IVector::add(m_step,posVec);
         if(!tmp)
         {
-            ILog::report("Error: error while make step in IIterator");
+            ILog::report("IIterator.doStep: error while make step");
             return ERR_ANY_OTHER;
         }
         bool contains;
         lastError = dynamic_cast<const ICompactImpl*>(m_com)->isContains(tmp,contains);
         if(lastError!= ERR_OK)
         {
-            ILog::report("Error: error while make step in IIterator");
+            ILog::report("IIterator.doStep: error while make step ");
             return lastError;
         }
         if(!contains)
         {
-            ILog::report("Error: compact iterator out of range");
+            ILog::report("IIterator.doStep: compact iterator out of range");
             return ERR_OUT_OF_RANGE;
         }
         IVector* ttmp = 0;
         lastError = m_com->getNearestNeighbor(tmp, ttmp);
         if(lastError!= ERR_OK)
         {
-            ILog::report("Error: error while make step in IIterator");
+            ILog::report("IIterator.doStep: error while make step");
             return lastError;
         }
         dynamic_cast<const ICompactImpl*>(m_com)->vecToIdx(ttmp,m_pos);
@@ -411,7 +434,7 @@ int ICompactImpl::IIteratorImpl::doStep()
     {
         if(m_pos + 1 == dynamic_cast<const ICompactImpl*>(m_com)->m_cardinality)
         {
-            ILog::report("Error: compact iterator out of range");
+            ILog::report("IIterator.doStep: compact iterator out of range");
             return ERR_OUT_OF_RANGE;
         }
         else
@@ -424,12 +447,12 @@ int ICompactImpl::IIteratorImpl::setStep(IVector const* const step)
 {
     if(!step)
     {
-        ILog::report("Error: setStep got nullptr, expected IVector pointer");
+        ILog::report("ICompact.setStep: got nullptr, expected IVector pointer");
         return ERR_WRONG_ARG;
     }
     if(step->getDim() != dynamic_cast<const ICompactImpl*>(m_com)->m_dim)
     {
-        ILog::report("Error: dimension mismatch in setStep");
+        ILog::report("ICompact.setStep: dimension mismatch in setStep");
         return ERR_WRONG_ARG;
     }
     delete m_step;
