@@ -43,8 +43,8 @@ namespace {
 
     protected:
         IVectorImpl() = default;
-        IVectorImpl(unsigned int size, double const* vals);
-        QVector< double > m_vec;
+        IVectorImpl(unsigned int size, double* vals);
+        double* m_vec;
         unsigned int m_dim;
 
     private:
@@ -65,12 +65,12 @@ IVector* IVector::createVector(unsigned int size, double const* vals)
 {
     if (!vals)
     {
-        ILog::report("Error: Vector init with nullptr, expected double pointer");
+        ILog::report("IVector::createVector: Vector init with nullptr, expected double pointer");
         return 0;
     }
     if (size == 0)
     {
-        ILog::report("Error: Vector can't be zero-dimensional");
+        ILog::report("IVector::createVector: Vector can't be zero-dimensional");
         return 0;
     }
 
@@ -79,20 +79,26 @@ IVector* IVector::createVector(unsigned int size, double const* vals)
 
 IVector* IVectorImpl::createVector(unsigned int size, const double *vals)
 {
-    return new IVectorImpl(size, vals);
+    double* try_vec = new double[size];
+    if(try_vec)
+    {
+        for(int i = 0; i < size; i++)
+        {
+            try_vec[i] = vals[i];
+        }
+        return new IVectorImpl(size, try_vec);
+    }
+    else
+    {
+        ILog::report("IVector::createVector: not enough memory");
+        return 0;
+    }
 }
 
 // @param size - legth of data array
 // @param vals - data array
 // creates VectorImpl
-IVectorImpl::IVectorImpl(unsigned int size, double const* vals): m_dim(size)
-{
-    //std::cout<<"ctor"<<std::endl;
-    for (unsigned int i = 0; i < m_dim; i++)
-    {
-        m_vec.push_back(vals[i]);
-    }
-}
+IVectorImpl::IVectorImpl(unsigned int size, double* vals): m_dim(size), m_vec(vals){}
 
 /*operations*/
 
@@ -103,38 +109,46 @@ int IVectorImpl::add(IVector const* const right)
 {
     if (!right)
     {
-        ILog::report("Error: right operand of addition is nullptr, expected IVector pointer");
+        ILog::report("IVector.add: right operand of addition is nullptr, expected IVector pointer");
         return ERR_WRONG_ARG;
     }
 
     if (m_dim != right->getDim())
     {
-        ILog::report("Error: Dimension mismatch in vector's addition");
+        ILog::report("IVector.add: dimension mismatch in vector's addition");
         return ERR_DIMENSIONS_MISMATCH;
     }
     int lastError = ERR_OK;
     const double *p_tmp;
+
+    double* this_tmp_vec = new double[m_dim];
+    if(!this_tmp_vec)
+    {
+        ILog::report("IVector.add: not enough memory");
+        return ERR_MEMORY_ALLOCATION;
+    }
+
     unsigned int r_dim;
     if ((lastError = right->getCoordsPtr(r_dim, p_tmp)) != ERR_OK)
         return lastError;
 
     for (unsigned int i = 0; i < m_dim; i++)
     {
-        if (p_tmp[i] > 0 && m_vec[i] > 0 && (DBL_MAX - p_tmp[i] < m_vec[i] || DBL_MAX - m_vec[i] < p_tmp[i]))
+        if (isnan(m_vec[i] + p_tmp[i]))
         {
-            ILog::report("WARNING: IVector.add overfulls, result saturated to DBL_MAX");
-            m_vec[i] = DBL_MAX;
-            lastError = ERR_OVERFULL;
-        }
-        else if (p_tmp[i] < 0 && m_vec[i] < 0 && (-DBL_MAX - p_tmp[i] > m_vec[i] || -DBL_MAX - m_vec[i] > p_tmp[i]))
-        {
-            ILog::report("WARNING: IVector.add overfulls, result saturated to -DBL_MAX");
-            m_vec[i] = -DBL_MAX;
-            lastError = ERR_OVERFULL;
+            ILog::report("IVector.add: double overfulls");
+            delete[] this_tmp_vec;
+            return ERR_OVERFULL;
         }
         else
-            m_vec[i] += p_tmp[i];
+        {
+            this_tmp_vec[i] =  m_vec[i] + p_tmp[i];
+        }
     }
+
+    delete[] m_vec;
+    m_vec = this_tmp_vec;
+
     return lastError;
 }
 
@@ -145,17 +159,24 @@ int IVectorImpl::subtract(IVector const* const right)
 {
     if (!right)
     {
-        ILog::report("Error: right operand of subtraction is nullptr, expected IVector pointer");
+        ILog::report("IVector.subtract: right operand of subtraction is nullptr, expected IVector pointer");
         return ERR_WRONG_ARG;
     }
 
     if (m_dim != right->getDim())
     {
-        ILog::report("Error: Dimension mismatch in vector's subtraction");
+        ILog::report("IVector.subtract: Dimension mismatch in vector's subtraction");
         return ERR_DIMENSIONS_MISMATCH;
     }
 
-    int lastError;
+    double* this_tmp_vec = new double[m_dim];
+    if(!this_tmp_vec)
+    {
+        ILog::report("IVector.add: not enough memory");
+        return ERR_MEMORY_ALLOCATION;
+    }
+
+    int lastError = ERR_OK;
     const double *p_tmp;
     unsigned int r_dim;
     if ((lastError = right->getCoordsPtr(r_dim, p_tmp)) != ERR_OK)
@@ -163,21 +184,19 @@ int IVectorImpl::subtract(IVector const* const right)
 
     for (unsigned int i = 0; i < m_dim; i++)
     {
-        if (p_tmp[i] < 0 && m_vec[i] > 0 && (DBL_MAX + p_tmp[i] < m_vec[i] || DBL_MAX - m_vec[i] < -p_tmp[i]))
+        if (isnan(m_vec[i] - p_tmp[i]))
         {
-            ILog::report("WARNING: IVector.subtract overfulls, result saturated to DBL_MAX");
-            m_vec[i] = DBL_MAX;
-            lastError = ERR_OVERFULL;
-        }
-        else if (p_tmp[i] > 0 && m_vec[i] < 0 && (-DBL_MAX + p_tmp[i] > m_vec[i] || -DBL_MAX - m_vec[i] > -p_tmp[i]))
-        {
-            ILog::report("WARNING: IVector.subtract overfulls, result saturated to -DBL_MAX");
-            m_vec[i] = -DBL_MAX;
-            lastError = ERR_OVERFULL;
+            ILog::report("IVector.add: double overfulls");
+            delete[] this_tmp_vec;
+            return ERR_OVERFULL;
         }
         else
-            m_vec[i] -= p_tmp[i];
+            this_tmp_vec[i] = m_vec[i] - p_tmp[i];
     }
+
+    delete[] m_vec;
+    m_vec = this_tmp_vec;
+
     return lastError;
 }
 
@@ -186,21 +205,29 @@ int IVectorImpl::subtract(IVector const* const right)
 // coordinatewise multiplication: this * scalar
 int IVectorImpl::multiplyByScalar(double scalar)
 {
-    int lastError = ERR_OK;
+    double* this_tmp_vec = new double[m_dim];
+    if(!this_tmp_vec)
+    {
+        ILog::report("IVector.add: not enough memory");
+        return ERR_MEMORY_ALLOCATION;
+    }
+
     for (unsigned int i = 0; i < m_dim; i++)
     {
-        if(DBL_MAX/ABS(m_vec[i]) < ABS(scalar) || DBL_MAX/ABS(scalar) < ABS(m_vec[i]))
+        if(isnan(m_vec[i]*scalar))
         {
-            ILog::report("WARNING: IVector.multiplyByScalar overfulls, result saturated to DBL_MAX");
-            double tmp1 = SIGN(scalar);
-            double tmp2 = SIGN(m_vec[i]);
-            m_vec[i] = (tmp1*tmp2>0)?DBL_MAX:(tmp1*tmp2<0)?-DBL_MAX:0;
-            lastError = ERR_OVERFULL;
+            ILog::report("IVector.multiplyByScalar: double overfulls");
+            delete[] this_tmp_vec;
+            return ERR_OVERFULL;
         }
         else
-            m_vec[i] *= scalar;
+            this_tmp_vec[i] = m_vec[i] * scalar;
     }
-    return lastError;
+
+    delete[] m_vec;
+    m_vec = this_tmp_vec;
+
+    return ERR_OK;
 }
 
 // @return error code
@@ -211,17 +238,17 @@ int IVectorImpl::dotProduct(IVector const* const right, double& res) const
 {
     if (!right)
     {
-        ILog::report("Error: right operand of dot product is nullptr, expected IVector pointer");
+        ILog::report("IVector.dotProduct: right operand of dot product is nullptr, expected IVector pointer");
         return ERR_WRONG_ARG;
     }
 
     if (m_dim != right->getDim())
     {
-        ILog::report("Error: Dimension mismatch in vector's dot product calculation");
+        ILog::report("IVector.dotProduct: Dimension mismatch in vector's dot product calculation");
         return ERR_DIMENSIONS_MISMATCH;
     }
 
-    int lastError;
+    int lastError = ERR_OK;
     const double *p_tmp;
     unsigned int r_dim;
     if ((lastError = right->getCoordsPtr(r_dim, p_tmp)) != ERR_OK)
@@ -232,16 +259,9 @@ int IVectorImpl::dotProduct(IVector const* const right, double& res) const
     for (unsigned int i = 0; i < m_dim; i++)
     {
         double tmp = m_vec[i] * tmp;
-        if (tmp > 0 && res > 0 && (DBL_MAX - tmp < res || DBL_MAX - res < tmp))
+        if (isnan(res+tmp))
         {
-            ILog::report("Error: IVector.dotProduct overfulls, result saturated to DBL_MAX");
-            res = DBL_MAX;
-            return ERR_OVERFULL;
-        }
-        else if (tmp < 0 && res < 0 && (-DBL_MAX - tmp > res || -DBL_MAX - res > tmp))
-        {
-            ILog::report("Error: IVector.dotProduct overfulls, result saturated to -DBL_MAX");
-            res = -DBL_MAX;
+            ILog::report("IVector.dotProduct: double overfulls");
             return ERR_OVERFULL;
         }
         else
@@ -261,13 +281,18 @@ IVector* IVector::add(IVector const* const left, IVector const* const right)
 {
     if (!left || !right)
     {
-        ILog::report("Error: operand of addition is nullptr, expected IVector pointer");
+        ILog::report("IVector.add: operand of addition is nullptr, expected IVector pointer");
         return 0;
     }
 
     IVector* res = left->clone();
-    res->add(right);
-    return res;
+    if(!res)
+        return 0;
+
+    if (res->add(right) == ERR_OK)
+        return res;
+    else
+        return 0;
 }
 
 // @return result of subtraction
@@ -277,13 +302,17 @@ IVector* IVector::add(IVector const* const left, IVector const* const right)
 {
     if (!left || !right)
     {
-        ILog::report("Error: operand of subtraction is nullptr, expected IVector pointer");
+        ILog::report("IVector.subtract: operand of subtraction is nullptr, expected IVector pointer");
         return 0;
     }
 
     IVector* res = left->clone();
-    res->subtract(right);
-    return res;
+    if(!res)
+        return 0;
+    if(res->subtract(right) == ERR_OK)
+        return res;
+    else
+        return 0;
 }
 
 // @return result of multiplication
@@ -293,13 +322,18 @@ IVector* IVector::multiplyByScalar(IVector const* const left, double scalar)
 {
     if (!left)
     {
-        ILog::report("Error: Left operand of addition is nullptr, expected IVector pointer");
+        ILog::report("IVector.multiplyByScalar: Left operand of addition is nullptr, expected IVector pointer");
         return 0;
     }
 
     IVector* res = left->clone();
-    res->multiplyByScalar(scalar);
-    return res;
+    if(!res)
+        return 0;
+
+    if(res->multiplyByScalar(scalar) == ERR_OK)
+        return res;
+    else
+        return 0;
 }
 
 /*comparators*/
@@ -314,11 +348,11 @@ int IVectorImpl::gt(IVector const* const right, NormType type, bool& result) con
 
     if (m_dim != right->getDim())
     {
-        ILog::report("Error: Dimension mismatch in gt");
+        ILog::report("IVector.gt: Dimension mismatch in gt");
         return ERR_DIMENSIONS_MISMATCH;
     }
 
-    int lastError;
+    int lastError = ERR_OK;
     double l_norm, r_norm;
 
     if((lastError = norm(type, l_norm)) != ERR_OK)
@@ -341,11 +375,11 @@ int IVectorImpl::lt(IVector const* const right, NormType type, bool& result) con
 {
     if (m_dim != right->getDim())
     {
-        ILog::report("Error: Dimension mismatch in lt");
+        ILog::report("IVector.lt: Dimension mismatch in lt");
         return ERR_DIMENSIONS_MISMATCH;
     }
 
-    int lastError;
+    int lastError = ERR_OK;
     double l_norm, r_norm;
 
     if((lastError = norm(type, l_norm)) != ERR_OK)
@@ -371,11 +405,11 @@ int IVectorImpl::eq(IVector const* const right, NormType type, bool& result, dou
 {
     if (m_dim != right->getDim())
     {
-        ILog::report("Error: Dimension mismatch in eq");
+        ILog::report("IVector.eq: Dimension mismatch in eq");
         return ERR_DIMENSIONS_MISMATCH;
     }
 
-    int lastError;
+    int lastError = ERR_OK;
     double l_norm, r_norm;
 
     if((lastError = norm(type, l_norm)) != ERR_OK)
@@ -383,6 +417,12 @@ int IVectorImpl::eq(IVector const* const right, NormType type, bool& result, dou
 
     if((lastError = right->norm(type, r_norm)) != ERR_OK)
         return lastError;
+
+    if(isnan(r_norm + precision) || isnan(r_norm - precision))
+    {
+        ILog::report("Ivector.eq: double overfulls");
+        return ERR_OVERFULL;
+    }
 
     if(l_norm < r_norm + precision && l_norm > r_norm - precision)
         result = true;
@@ -411,16 +451,9 @@ int IVectorImpl::norm(NormType type, double& res) const
     case NORM_1:
         for (unsigned int i = 0; i < m_dim; i++)
         {
-            if (ABS(m_vec[i]) > 0 && res > 0 && (DBL_MAX - ABS(m_vec[i]) < res || DBL_MAX - res < ABS(m_vec[i])))
+            if (isnan(res + ABS(m_vec[i])))
             {
-                ILog::report("Error: IVector.norm overfulls, result saturated to DBL_MAX");
-                res = DBL_MAX;
-                return ERR_OVERFULL;
-            }
-            else if (ABS(m_vec[i]) < 0 && res < 0 && (-DBL_MAX - ABS(m_vec[i]) > res || -DBL_MAX - res > ABS(m_vec[i])))
-            {
-                ILog::report("Error: IVector.norm overfulls, result saturated to -DBL_MAX");
-                res = -DBL_MAX;
+                ILog::report("IVector.norm: double overfulls");
                 return ERR_OVERFULL;
             }
             else
@@ -431,17 +464,16 @@ int IVectorImpl::norm(NormType type, double& res) const
     case NORM_2:
         for (unsigned int i = 0; i < m_dim; i++)
         {
-            double tmp = m_vec[i] * m_vec[i];;
-            if (tmp > 0 && res > 0 && (DBL_MAX - tmp < res || DBL_MAX - res < tmp))
+            if(isnan(m_vec[i] * m_vec[i]))
             {
-                ILog::report("Error: IVector.norm overfulls, result saturated to DBL_MAX");
-                res = DBL_MAX;
+                ILog::report("IVector.norm: double overfulls");
                 return ERR_OVERFULL;
             }
-            else if (tmp < 0 && res < 0 && (-DBL_MAX - tmp > res || -DBL_MAX - res > tmp))
+
+            double tmp = m_vec[i] * m_vec[i];
+            if (isnan(res+tmp))
             {
-                ILog::report("Error: IVector.norm overfulls, result saturated to -DBL_MAX");
-                res = -DBL_MAX;
+                ILog::report("IVector.norm: double overfulls");
                 return ERR_OVERFULL;
             }
             else
@@ -459,7 +491,7 @@ int IVectorImpl::norm(NormType type, double& res) const
         break;
 
     default:
-        ILog::report("Error: Unknown code of norm");
+        ILog::report("IVector.norm: Unknown code of norm");
         return ERR_NORM_NOT_DEFINED;
         break;
     }
@@ -473,7 +505,7 @@ int IVectorImpl::norm(NormType type, double& res) const
 int IVectorImpl::setCoord(unsigned int index, double elem)
 {
     if (index >= m_dim){
-        ILog::report("Error: Index out of range in setCoord");
+        ILog::report("IVector.setCoord: Index out of range in setCoord");
         return ERR_OUT_OF_RANGE;
     }
 
@@ -489,13 +521,13 @@ int IVectorImpl::setAllCoords(unsigned int dim, double* coords)
 {
     if (!coords)
     {
-        ILog::report("Error: setAllCoords got nullptr, expected double pointer");
+        ILog::report("IVector.setAllCoords: setAllCoords got nullptr, expected double pointer");
         return ERR_WRONG_ARG;
     }
 
     if (m_dim != dim)
     {
-        ILog::report("Error: Dimension mismatch in setAllCoords");
+        ILog::report("IVector.setAllCoords: Dimension mismatch in setAllCoords");
         return ERR_DIMENSIONS_MISMATCH;
     }
 
@@ -513,19 +545,19 @@ int IVectorImpl::setAllCoords(IVector const* const other)
 {
     if (!other)
     {
-        ILog::report("Error: setAllCoords got nullptr, expected IVector pointer");
+        ILog::report("IVector.setAllCoords: setAllCoords got nullptr, expected IVector pointer");
         return ERR_WRONG_ARG;
     }
 
     if (m_dim != other->getDim())
     {
-        ILog::report("Error: Dimension mismatch in setAllCoords");
+        ILog::report("IVector.setAllCoords: Dimension mismatch in setAllCoords");
         return ERR_DIMENSIONS_MISMATCH;
     }
 
     const double *p_tmp;
     unsigned int o_dim;
-    int lastError;
+    int lastError = ERR_OK;
     if ((lastError = other->getCoordsPtr(o_dim, p_tmp)) != ERR_OK)
         return lastError;
 
@@ -544,7 +576,7 @@ int IVectorImpl::getCoord(unsigned int index, double & elem) const
 {
     if (index >= m_dim)
     {
-        ILog::report("Error: Index out of range in getCoord method");
+        ILog::report("IVector.getCoord: Index out of range in getCoord method");
         return ERR_OUT_OF_RANGE;
     }
 
@@ -559,7 +591,7 @@ int IVectorImpl::getCoord(unsigned int index, double & elem) const
 int IVectorImpl::getCoordsPtr(unsigned int & dim, double const*& elem) const
 {
     dim = m_dim;
-    elem = m_vec.data();
+    elem = m_vec;
     return ERR_OK;
 }
 
@@ -567,8 +599,24 @@ int IVectorImpl::getCoordsPtr(unsigned int & dim, double const*& elem) const
 // create a deep copy
 IVector* IVectorImpl::clone() const
 {
-    return new IVectorImpl(m_dim, m_vec.data());
+    double* try_vec = new double[m_dim];
+    if(try_vec)
+    {
+        for(int i = 0; i < m_dim; i++)
+        {
+            try_vec[i] = m_vec[i];
+        }
+        return new IVectorImpl(m_dim, try_vec);
+    }
+    else
+    {
+        ILog::report("IVector.clone: not enough memory");
+        return 0;
+    }
 }
 
 // default D-TOR
-IVectorImpl::~IVectorImpl(){/*std::cout<<"dtor"<<std::endl;*/}
+IVectorImpl::~IVectorImpl()
+{
+    delete[] m_vec;
+}
