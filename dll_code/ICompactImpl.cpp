@@ -118,8 +118,13 @@ ICompact* ICompactImpl::createCompact(const IVector *const begin, const IVector 
 
     double* t_begin = new double[dim];
     double* t_end = new double[dim];
-    if(!t_begin || t_end)
+    if(!t_begin || !t_end)
     {
+        delete[] t_begin;
+        t_begin = 0;
+        delete[] t_end;
+        t_end = 0;
+
         ILog::report("ICompact.createCompact: not enough memory");
         return 0;
     }
@@ -143,6 +148,11 @@ ICompact* ICompactImpl::createCompact(const IVector *const begin, const IVector 
 
     if(!try_begin || !try_end)
     {
+        delete try_begin;
+        try_begin = 0;
+        delete try_end;
+        try_end = 0;
+
         ILog::report("ICompact.createCompact: not enough memory");
         return 0;
     }
@@ -154,6 +164,11 @@ ICompact* ICompactImpl::createCompact(const IVector *const begin, const IVector 
     {
         if (step->getDim() != begin->getDim() || step->getDim() != end->getDim() || begin->getDim() != end->getDim())
         {
+            delete try_begin;
+            try_begin = 0;
+            delete try_end;
+            try_end = 0;
+
             ILog::report("ICompact.createCompact: dimension mismatch in createCompact");
             return 0;
         }
@@ -175,6 +190,11 @@ ICompact* ICompactImpl::createCompact(const IVector *const begin, const IVector 
             step->getCoord(i,d);
             if((ABS(card) > (unsigned int)((double)UINT_MAX/ABS(d))))
             {
+                delete try_begin;
+                try_begin = 0;
+                delete try_end;
+                try_end = 0;
+
                 ILog::report("ICompact.createCompact: there are too many vertices in the compact grid");
                 return 0;
             }
@@ -196,6 +216,11 @@ ICompact* ICompactImpl::createCompact(const IVector *const begin, const IVector 
         double* tmp = new double[dim];
         if(!tmp)
         {
+            delete try_begin;
+            try_begin = 0;
+            delete try_end;
+            try_end = 0;
+
             ILog::report("ICompact.createCompact: not enough memory");
             return 0;
         }
@@ -212,6 +237,11 @@ ICompact* ICompactImpl::createCompact(const IVector *const begin, const IVector 
 
         if(!try_steps)
         {
+            delete try_begin;
+            try_begin = 0;
+            delete try_end;
+            try_end = 0;
+
             ILog::report("ICompact.createCompact: not enough memory");
             return 0;
         }
@@ -283,7 +313,7 @@ int ICompactImpl::getByIterator(const IIterator *pIter, IVector *&pItem) const
     idxToVec(pos,tmp);
 
     pItem = tmp->clone();
-    delete[] tmp;
+    delete tmp;
 
     return ERR_OK;
 }
@@ -463,7 +493,10 @@ ICompactImpl::IIteratorImpl::IIteratorImpl(ICompact const* const compact, int po
 {
     m_com = compact;
     m_pos = pos;
-    m_step = step->clone();
+    if(step)
+        m_step = step->clone();
+    else
+        m_step = 0;
 }
 
 ICompactImpl::IIteratorImpl::~IIteratorImpl()

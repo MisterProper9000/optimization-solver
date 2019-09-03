@@ -4,7 +4,7 @@
 #include "IVector.h"
 #include "SHARED_EXPORT.h"
 
-class SHARED_EXPORT ISet
+class /*SHARED_EXPORT*/ ISet
 {
 public:
 

@@ -130,7 +130,10 @@ int IVectorImpl::add(IVector const* const right)
 
     unsigned int r_dim;
     if ((lastError = right->getCoordsPtr(r_dim, p_tmp)) != ERR_OK)
+    {
+        delete[] this_tmp_vec;
         return lastError;
+    }
 
     for (unsigned int i = 0; i < m_dim; i++)
     {
@@ -180,7 +183,10 @@ int IVectorImpl::subtract(IVector const* const right)
     const double *p_tmp;
     unsigned int r_dim;
     if ((lastError = right->getCoordsPtr(r_dim, p_tmp)) != ERR_OK)
+    {
+        delete[] this_tmp_vec;
         return lastError;
+    }
 
     for (unsigned int i = 0; i < m_dim; i++)
     {

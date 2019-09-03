@@ -4,7 +4,7 @@
 #include "IVector.h"
 #include "SHARED_EXPORT.h"
 
-class SHARED_EXPORT ICompact
+class /*SHARED_EXPORT*/ ICompact
 {
 public:
     enum InterfaceTypes

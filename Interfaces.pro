@@ -16,10 +16,14 @@ TEMPLATE = app
 
 
 SOURCES += main.cpp \
-    dll_code/IVectorImpl.cpp
+    dll_code/IVectorImpl.cpp \
+    dll_code/ICompactImpl.cpp \
+    dll_code/ISetImpl.cpp
 
 HEADERS += \
     IVector.h \
+    ISet.h \
+    ICompact.h \
     ILog.h \
     error.h \
     SHARED_EXPORT.h

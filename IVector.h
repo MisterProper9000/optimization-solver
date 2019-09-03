@@ -4,7 +4,7 @@
 #include "error.h"
 #include "SHARED_EXPORT.h"
 
-class SHARED_EXPORT IVector
+class /*SHARED_EXPORT*/ IVector
 {
 public:
     enum InterfaceTypes
