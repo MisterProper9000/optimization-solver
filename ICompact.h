@@ -68,6 +68,28 @@ public:
         else return src->clone();
     }
 
+    class IIterator
+    {
+    public:
+        //adds step to current value in iterator
+        virtual int doStep() = 0;
+
+        //change step
+        virtual int setStep(IVector const* const step) = 0;
+
+
+    protected:
+        IIterator(ICompact const* const compact, int pos, IVector const* const step);
+
+        /*dtor*/
+        virtual ~IIterator(){};
+
+    private:
+        /*non default copyable*/
+        IIterator(const IIterator& other) = delete;
+        void operator=(const IIterator& other) = delete;
+    };
+
     virtual int deleteIterator(IIterator * pIter) = 0;
     virtual int getByIterator(IIterator const* pIter, IVector*& pItem) const = 0;
 
@@ -92,28 +114,6 @@ public:
 
     /*dtor*/
     virtual ~ICompact(){};
-
-    class IIterator
-    {
-    public:
-        //adds step to current value in iterator
-        virtual int doStep() = 0;
-
-        //change step
-        virtual int setStep(IVector const* const step) = 0;
-
-
-    protected:
-        IIterator(ICompact const* const compact, int pos, IVector const* const step);
-
-        /*dtor*/
-        virtual ~IIterator(){};
-
-    private:
-        /*non default copyable*/
-        IIterator(const IIterator& other) = delete;
-        void operator=(const IIterator& other) = delete;
-    };
 
 protected:
     ICompact() = default;
