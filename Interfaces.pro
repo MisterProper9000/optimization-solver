@@ -26,3 +26,4 @@ HEADERS += \
     ISet.h \
     SHARED_EXPORT.h
 
+LIBS += "..\Interfaces-build-desktop-Qt_4_7_4__mingw_________\debug\ILog.dll"

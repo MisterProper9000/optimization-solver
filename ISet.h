@@ -26,12 +26,6 @@ public:
     virtual unsigned int getSize() const = 0;
     virtual int clear() = 0;
 
-    virtual IIterator* end() = 0;
-    virtual IIterator* begin() = 0;
-
-    virtual int deleteIterator(IIterator * pIter) = 0;
-    virtual int getByIterator(IIterator const* pIter, IVector*& pItem) const = 0;
-
     class IIterator
     {
     public:
@@ -51,6 +45,12 @@ public:
         IIterator(const IIterator& other) = delete;
         void operator=(const IIterator& other) = delete;
     };
+
+    virtual IIterator* end() = 0;
+    virtual IIterator* begin() = 0;
+
+    virtual int deleteIterator(IIterator * pIter) = 0;
+    virtual int getByIterator(IIterator const* pIter, IVector*& pItem) const = 0;
 
     /*dtor*/
     virtual ~ISet() = default;
