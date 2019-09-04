@@ -77,6 +77,8 @@ namespace{
         ICompactImpl(const ICompactImpl& other) = delete;
         void operator=(const ICompactImpl& other) = delete;
 
+        bool checkStep(IVector* step);
+
         unsigned int m_dim;
         unsigned int m_cardinality; // how many points in the compact's grid
 
@@ -188,7 +190,17 @@ ICompact* ICompactImpl::createCompact(const IVector *const begin, const IVector 
         for (unsigned int i = 0; i < dim; i++) // check if step data match the unsigned int
         {
             step->getCoord(i,d);
-            if((ABS(card) > (unsigned int)((double)UINT_MAX/ABS(d))))
+            if(d == 0)
+            {
+                delete try_begin;
+                try_begin = 0;
+                delete try_end;
+                try_end = 0;
+
+                ILog::report("ICompact.createCompact: zero step is unacceptable");
+                return 0;
+            }
+            if((ABS(card) > (unsigned int)((double)UINT_MAX/ABS(d+1))))//Ivan's noting
             {
                 delete try_begin;
                 try_begin = 0;
@@ -199,7 +211,7 @@ ICompact* ICompactImpl::createCompact(const IVector *const begin, const IVector 
                 return 0;
             }
             else
-                card *= (unsigned int)ABS(d);
+                card *= (unsigned int)ABS(d+1);//Ivan's noting
         }
         try_steps = step->clone();
         if(!try_steps)
@@ -292,6 +304,7 @@ int ICompactImpl::deleteIterator(IIterator *pIter)
     return ERR_OK;
 }
 
+
 int ICompactImpl::getByIterator(const IIterator *pIter, IVector *&pItem) const
 {
     if(!pIter)
@@ -346,13 +359,13 @@ int ICompactImpl::getNearestNeighbor(const IVector *vec, IVector *&nn) const
         m_end->getCoord(i,e);
         m_steps->getCoord(i,s);
         unsigned int numStepBeforeVec = (unsigned int)floor(((x-b)/(e-b))*s);
-        if(ABS(x-numStepBeforeVec*(e-b)/s) > ABS(x- (numStepBeforeVec+1)*(e-b)/s))
+        if(ABS(x-numStepBeforeVec*(e-b)/s - b) > ABS(x- (numStepBeforeVec+1)*(e-b)/s - b))
         {
-            tmp[i] = (numStepBeforeVec+1)*(e-b)/s;
+            tmp[i] = (numStepBeforeVec+1)*(e-b)/s + b;
         }
         else
         {
-            tmp[i] = numStepBeforeVec*(e-b)/s;
+            tmp[i] = numStepBeforeVec*(e-b)/s + b;
         }
     }
 
@@ -368,6 +381,13 @@ int ICompactImpl::getNearestNeighbor(const IVector *vec, IVector *&nn) const
 ICompactImpl::IIterator* ICompactImpl::end(IVector const* const step)
 {
     IIterator* it = new IIteratorImpl(this,m_cardinality-1,step);
+
+    if(!checkStep(step))
+    {
+        delete it;
+        return 0;
+    }
+
     iterators.push_back(dynamic_cast<IIteratorImpl*>(it));
     return it;
 }
@@ -375,6 +395,14 @@ ICompactImpl::IIterator* ICompactImpl::end(IVector const* const step)
 ICompactImpl::IIterator* ICompactImpl::begin(IVector const* const step)
 {
     IIterator* it = new IIteratorImpl(this,0,step);
+
+
+    if(!checkStep(step))
+    {
+        delete it;
+        return 0;
+    }
+
     iterators.push_back(dynamic_cast<IIteratorImpl*>(it));
     return it;
 }
@@ -485,8 +513,20 @@ int ICompactImpl::IIteratorImpl::setStep(IVector const* const step)
         ILog::report("ICompact.setStep: dimension mismatch in setStep");
         return ERR_WRONG_ARG;
     }
+
+    if(!checkStep(step))
+    {
+        return ERR_INVALID_STEP;
+    }
+
+    IVector* tmp_step = step->clone();
+    if(!tmp_step)
+    {
+        ILog::report("ICompact.IIterator.setStep: not enough memory");
+        return ERR_MEMORY_ALLOCATION;
+    }
     delete m_step;
-    m_step = step->clone();
+    m_step = tmp_step;
 }
 
 ICompactImpl::IIteratorImpl::IIteratorImpl(ICompact const* const compact, int pos, IVector const* const step):ICompact::IIterator::IIterator(compact, pos, step)
@@ -539,8 +579,8 @@ void ICompactImpl::idxToVec(unsigned int idx, IVector*& res) const
     for(unsigned int i = 0; i < m_dim; i++)
     {
         m_steps->getCoord(i,s);
-        vec[i] = idx % (unsigned int)s;
-        idx /= (unsigned int)s;
+        vec[i] = idx % (unsigned int)(s+1);
+        idx /= (unsigned int)(s+1);
     }
 
     for(unsigned int i = 0; i < m_dim; i++)
@@ -548,7 +588,7 @@ void ICompactImpl::idxToVec(unsigned int idx, IVector*& res) const
         m_begin->getCoord(i,b);
         m_end->getCoord(i,e);
         m_steps->getCoord(i,s);
-        vec[i] *= (e - b)/s;
+        vec[i] *= (e - b)/(s+1);
     }
 
     for(unsigned int i = 0; i < m_dim; i++)
@@ -559,4 +599,42 @@ void ICompactImpl::idxToVec(unsigned int idx, IVector*& res) const
     res = IVector::createVector(m_dim, vec);
     delete[] vec;
     vec = 0;
+}
+
+bool ICompactImpl::checkStep(IVector* step)
+{
+    if(step)
+    {
+        IVector* it_pos = 0;
+        int lastError = ERR_OK;
+        if((lastError = getByIterator(it, it_pos)) != ERR_OK)
+        {
+            ILog::report("ICompact.begin: error while step verification");
+            return false;
+        }
+        it->doStep();
+
+        IVector* it_new_pos = 0;
+        if((lastError = getByIterator(it, it_new_pos)) != ERR_OK)
+        {
+            ILog::report("ICompact.begin: error while step verification");
+            return false;
+        }
+
+        int a, b, c;
+        for(unsigned int i = 0; i < m_dim; i++)
+        {
+            it_pos->getCoord(i, a);
+            it_new_pos->getCoord(i, b);
+            if (a == b)
+                c++;
+        }
+        if(c == m_dim)
+        {
+            ILog::report("ICompact.begin: given step not suitable for iteration");
+            return false;
+        }
+
+    }
+    return true;
 }
