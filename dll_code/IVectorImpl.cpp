@@ -57,7 +57,7 @@ namespace {
 // return interface implementation ID
 int IVectorImpl::getId() const
 {
-    return DIMENSION_INTERFACE_IMPL;
+    return INTERFACE_0;
 }
 
 // @return pointer to IVector instance
@@ -293,7 +293,9 @@ IVector* IVector::add(IVector const* const left, IVector const* const right)
 
     IVector* res = left->clone();
     if(!res)
+    {
         return 0;
+    }
 
     if (res->add(right) == ERR_OK)
         return res;
@@ -351,6 +353,11 @@ IVector* IVector::multiplyByScalar(IVector const* const left, double scalar)
 // compare vector norms of specified type
 int IVectorImpl::gt(IVector const* const right, NormType type, bool& result) const
 {
+    if(!right)
+    {
+        ILog::report("IVector.gt: got nullptr, expected IVector pointer");
+        return ERR_WRONG_ARG;
+    }
 
     if (m_dim != right->getDim())
     {
@@ -379,6 +386,12 @@ int IVectorImpl::gt(IVector const* const right, NormType type, bool& result) con
 // compare vector norms of specified type
 int IVectorImpl::lt(IVector const* const right, NormType type, bool& result) const
 {
+    if(!right)
+    {
+        ILog::report("IVector.lt: got nullptr, expected IVector pointer");
+        return ERR_WRONG_ARG;
+    }
+
     if (m_dim != right->getDim())
     {
         ILog::report("IVector.lt: Dimension mismatch in lt");
@@ -409,6 +422,24 @@ int IVectorImpl::lt(IVector const* const right, NormType type, bool& result) con
 // if the difference between the norms lies in the epsilon neighborhood of zero then norms are equal
 int IVectorImpl::eq(IVector const* const right, NormType type, bool& result, double precision) const
 {
+    if(!right)
+    {
+        ILog::report("IVector.eq: got nullptr, expected IVector pointer");
+        return ERR_WRONG_ARG;
+    }
+
+    if(precision < 0)
+    {
+        ILog::report("IVector.eq: got negative precision");
+        return ERR_WRONG_ARG;
+    }
+
+    if(right == this)
+    {
+        result = true;
+        return ERR_OK;
+    }
+
     if (m_dim != right->getDim())
     {
         ILog::report("IVector.eq: Dimension mismatch in eq");
